@@ -3,6 +3,15 @@ import { generateItinerary } from "@/lib/openai";
 import { searchFlights, searchHotels } from "@/lib/serpapi";
 import type { ItineraryAPIRequest, TravelPlan } from "@/types";
 
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(`Timed out after ${ms}ms`)), ms)
+    ),
+  ]);
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body: ItineraryAPIRequest = await request.json();
@@ -16,22 +25,31 @@ export async function POST(request: NextRequest) {
     }
 
     const [flightsResult, hotelsResult, itineraryResult] = await Promise.allSettled([
-      searchFlights(
-        travelInfo.source,
-        travelInfo.destination,
-        travelInfo.departureDate,
-        travelInfo.returnDate,
-        travelInfo.travelers || 1,
-        travelInfo.currency || "USD"
+      withTimeout(
+        searchFlights(
+          travelInfo.source,
+          travelInfo.destination,
+          travelInfo.departureDate,
+          travelInfo.returnDate,
+          travelInfo.travelers || 1,
+          travelInfo.currency || "USD"
+        ),
+        12000
       ),
-      searchHotels(
-        travelInfo.destination,
-        travelInfo.departureDate,
-        travelInfo.returnDate || travelInfo.departureDate,
-        travelInfo.travelers || 1,
-        travelInfo.currency || "USD"
+      withTimeout(
+        searchHotels(
+          travelInfo.destination,
+          travelInfo.departureDate,
+          travelInfo.returnDate || travelInfo.departureDate,
+          travelInfo.travelers || 1,
+          travelInfo.currency || "USD"
+        ),
+        12000
       ),
-      generateItinerary(travelInfo as Record<string, unknown>),
+      withTimeout(
+        generateItinerary(travelInfo as Record<string, unknown>),
+        45000
+      ),
     ]);
 
     const flights =

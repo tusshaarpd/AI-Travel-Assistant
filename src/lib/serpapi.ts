@@ -16,6 +16,7 @@ async function fetchSerpAPI(params: Record<string, string>): Promise<Record<stri
 
   const response = await fetch(`${SERPAPI_BASE}?${searchParams.toString()}`, {
     next: { revalidate: 3600 },
+    signal: AbortSignal.timeout(10000),
   });
 
   if (!response.ok) {

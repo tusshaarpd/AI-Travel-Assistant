@@ -74,68 +74,53 @@ export async function generateItinerary(
 ): Promise<string> {
   const client = getOpenAIClient();
 
-  const prompt = `Generate a comprehensive day-by-day travel itinerary for:
-- From: ${travelInfo.source}
-- To: ${travelInfo.destination}
-- Departure: ${travelInfo.departureDate}
-- Return: ${travelInfo.returnDate}
-- Budget: ${travelInfo.budget} ${travelInfo.currency || "USD"}
-- Travel Style: ${Array.isArray(travelInfo.travelStyle) ? travelInfo.travelStyle.join(", ") : travelInfo.travelStyle}
-- Travelers: ${travelInfo.travelers || 1}
-- Preferences: ${travelInfo.preferences || "none specified"}
+  const departureDate = travelInfo.departureDate as string;
+  const returnDate = travelInfo.returnDate as string;
+  const msPerDay = 1000 * 60 * 60 * 24;
+  const tripDays = returnDate
+    ? Math.min(7, Math.max(1, Math.round((new Date(returnDate).getTime() - new Date(departureDate).getTime()) / msPerDay)))
+    : 3;
 
-Respond with a JSON object containing:
+  const prompt = `Create a ${tripDays}-day travel itinerary in JSON.
+Trip: ${travelInfo.source} → ${travelInfo.destination}, ${departureDate} to ${returnDate || ""}
+Budget: ${travelInfo.budget} ${travelInfo.currency || "USD"}, Style: ${Array.isArray(travelInfo.travelStyle) ? travelInfo.travelStyle.join(", ") : travelInfo.travelStyle}, Travelers: ${travelInfo.travelers || 1}
+
+Return ONLY this JSON (no extra text):
 {
   "itinerary": [
     {
-      "day": 1,
-      "date": "YYYY-MM-DD",
-      "title": "Day title",
-      "theme": "Theme for the day",
-      "morning": [{ "name": "", "description": "", "duration": "", "cost": 0, "type": "attraction|activity|transport|shopping|nature|cultural", "address": "", "tips": "" }],
-      "afternoon": [...],
-      "evening": [...],
+      "day": 1, "date": "YYYY-MM-DD", "title": "string", "theme": "string",
+      "morning": [{"name":"","description":"","duration":"","cost":0,"type":"attraction","address":"","tips":""}],
+      "afternoon": [{"name":"","description":"","duration":"","cost":0,"type":"activity","address":"","tips":""}],
+      "evening": [{"name":"","description":"","duration":"","cost":0,"type":"cultural","address":"","tips":""}],
       "meals": {
-        "breakfast": { "restaurant": "", "cuisine": "", "priceRange": "$|$$|$$$", "specialty": "", "address": "" },
-        "lunch": {...},
-        "dinner": {...}
+        "breakfast": {"restaurant":"","cuisine":"","priceRange":"$","specialty":"","address":""},
+        "lunch": {"restaurant":"","cuisine":"","priceRange":"$$","specialty":"","address":""},
+        "dinner": {"restaurant":"","cuisine":"","priceRange":"$$","specialty":"","address":""}
       },
-      "tips": ["tip1", "tip2"],
+      "tips": ["string"],
       "estimatedDailyCost": 0
     }
   ],
-  "generalTips": ["tip1", "tip2", "tip3"],
-  "bestTimeToVisit": "...",
-  "weatherInfo": "...",
-  "visaInfo": "...",
-  "costBreakdown": {
-    "flights": 0,
-    "accommodation": 0,
-    "activities": 0,
-    "meals": 0,
-    "transport": 0,
-    "miscellaneous": 0,
-    "total": 0,
-    "currency": "USD",
-    "withinBudget": true,
-    "budgetDifference": 0
-  }
+  "generalTips": ["string","string","string"],
+  "bestTimeToVisit": "string",
+  "weatherInfo": "string",
+  "visaInfo": "string",
+  "costBreakdown": {"flights":0,"accommodation":0,"activities":0,"meals":0,"transport":0,"miscellaneous":0,"total":0,"currency":"USD","withinBudget":true,"budgetDifference":0}
 }
-
-Make the itinerary realistic, detailed, and tailored to the travel style. Include specific restaurant names, attraction names, and practical tips.`;
+Limit: 1-2 activities per time period. Be concise but specific (real place names).`;
 
   const response = await client.chat.completions.create({
     model: "gpt-4o-mini",
     messages: [
       {
         role: "system",
-        content:
-          "You are an expert travel planner. Generate detailed, realistic travel itineraries in JSON format.",
+        content: "You are a travel planner. Respond only with valid compact JSON, no markdown.",
       },
       { role: "user", content: prompt },
     ],
-    temperature: 0.8,
-    max_tokens: 4000,
+    temperature: 0.7,
+    max_tokens: 2500,
     response_format: { type: "json_object" },
   });
 
