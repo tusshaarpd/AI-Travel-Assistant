@@ -105,19 +105,27 @@ async function fetchSerpAPI(params: Record<string, string>): Promise<Record<stri
     throw new Error("SERPAPI_KEY environment variable is not set");
   }
 
+  // engine must come first; api_key and no_cache appended at the end
+  const { engine, ...rest } = params;
   const searchParams = new URLSearchParams({
-    ...params,
-    api_key: apiKey,
+    engine,
+    ...rest,
     no_cache: "true",
+    api_key: apiKey,
   });
 
-  const response = await fetch(`${SERPAPI_BASE}?${searchParams.toString()}`, {
+  const url = `${SERPAPI_BASE}?${searchParams.toString()}`;
+
+  // Log URL without the key so it's visible in Vercel logs for debugging
+  const debugUrl = url.replace(apiKey, "***");
+  console.log("[SerpAPI] GET", debugUrl);
+
+  const response = await fetch(url, {
     cache: "no-store",
     signal: AbortSignal.timeout(10000),
   });
 
   if (!response.ok) {
-    // Read the actual error body for a useful message
     let errorDetail = response.statusText;
     try {
       const body = await response.json();
@@ -125,6 +133,7 @@ async function fetchSerpAPI(params: Record<string, string>): Promise<Record<stri
     } catch {
       // ignore parse failure
     }
+    console.error("[SerpAPI] Error:", response.status, errorDetail, "| URL:", debugUrl);
     throw new Error(`SerpAPI: ${errorDetail}`);
   }
 
