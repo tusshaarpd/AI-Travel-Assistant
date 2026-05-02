@@ -52,13 +52,31 @@ export async function POST(request: NextRequest) {
       ),
     ]);
 
-    const flights =
-      flightsResult.status === "fulfilled"
-        ? flightsResult.value
-        : { outbound: [], returning: [] };
+    if (flightsResult.status === "rejected") {
+      const reason = flightsResult.reason instanceof Error ? flightsResult.reason.message : String(flightsResult.reason);
+      console.error("Flight search rejected:", reason);
+      return NextResponse.json(
+        { error: `Flight search failed: ${reason}` },
+        { status: 502 }
+      );
+    }
 
-    const hotels =
-      hotelsResult.status === "fulfilled" ? hotelsResult.value : [];
+    if (hotelsResult.status === "rejected") {
+      const reason = hotelsResult.reason instanceof Error ? hotelsResult.reason.message : String(hotelsResult.reason);
+      console.error("Hotel search rejected:", reason);
+      return NextResponse.json(
+        { error: `Hotel search failed: ${reason}` },
+        { status: 502 }
+      );
+    }
+
+    if (itineraryResult.status === "rejected") {
+      const reason = itineraryResult.reason instanceof Error ? itineraryResult.reason.message : String(itineraryResult.reason);
+      return NextResponse.json(
+        { error: `Itinerary generation failed: ${reason}` },
+        { status: 502 }
+      );
+    }
 
     let itineraryData = {
       itinerary: [],
@@ -77,19 +95,17 @@ export async function POST(request: NextRequest) {
       },
     };
 
-    if (itineraryResult.status === "fulfilled") {
-      try {
-        itineraryData = JSON.parse(itineraryResult.value);
-      } catch {
-        console.error("Failed to parse itinerary JSON");
-      }
+    try {
+      itineraryData = JSON.parse(itineraryResult.value);
+    } catch {
+      console.error("Failed to parse itinerary JSON");
     }
 
     const travelPlan: TravelPlan = {
       travelInfo,
-      outboundFlights: flights.outbound,
-      returnFlights: flights.returning,
-      hotels: Array.isArray(hotels) ? hotels : (hotels as { hotels: typeof hotels }).hotels || [],
+      outboundFlights: flightsResult.value.outbound,
+      returnFlights: flightsResult.value.returning,
+      hotels: hotelsResult.value,
       itinerary: itineraryData.itinerary || [],
       costBreakdown: itineraryData.costBreakdown,
       generalTips: itineraryData.generalTips || [],
