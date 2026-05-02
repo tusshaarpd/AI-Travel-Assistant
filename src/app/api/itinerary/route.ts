@@ -142,17 +142,19 @@ export async function POST(request: NextRequest) {
       budgetDifference: budget > 0 ? budget - realTotal : 0,
     };
 
+    const raw = itineraryData as Record<string, unknown>;
+
     const travelPlan: TravelPlan = {
       travelInfo,
       outboundFlights,
       returnFlights,
       hotels,
-      itinerary: itineraryData.itinerary || [],
+      itineraries: (raw.itineraries as TravelPlan["itineraries"]) || [],
       costBreakdown,
-      generalTips: itineraryData.generalTips || [],
-      bestTimeToVisit: (itineraryData as Record<string, unknown>).bestTimeToVisit as string | undefined,
-      weatherInfo: (itineraryData as Record<string, unknown>).weatherInfo as string | undefined,
-      visaInfo: (itineraryData as Record<string, unknown>).visaInfo as string | undefined,
+      generalTips: (raw.generalTips as string[]) || [],
+      bestTimeToVisit: raw.bestTimeToVisit as string | undefined,
+      weatherInfo: raw.weatherInfo as string | undefined,
+      visaInfo: raw.visaInfo as string | undefined,
     };
 
     return NextResponse.json(travelPlan);

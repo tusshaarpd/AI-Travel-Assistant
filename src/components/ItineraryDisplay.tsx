@@ -2,21 +2,20 @@
 
 import { useState } from "react";
 import { Coffee, Sun, Moon, ChevronDown, ChevronUp, MapPin, Clock, DollarSign, Lightbulb } from "lucide-react";
-import type { DayItinerary, ItineraryActivity } from "@/types";
-import { formatCurrency, formatDate, cn } from "@/lib/utils";
+import type { DayItinerary, ItineraryActivity, ItineraryOption } from "@/types";
+import { formatDate, cn } from "@/lib/utils";
 
 const ACTIVITY_TYPE_STYLES: Record<string, { bg: string; text: string; emoji: string }> = {
   attraction: { bg: "bg-blue-50", text: "text-blue-700", emoji: "🏛️" },
-  activity: { bg: "bg-emerald-50", text: "text-emerald-700", emoji: "🎯" },
-  transport: { bg: "bg-slate-50", text: "text-slate-600", emoji: "🚌" },
-  shopping: { bg: "bg-pink-50", text: "text-pink-700", emoji: "🛍️" },
-  nature: { bg: "bg-green-50", text: "text-green-700", emoji: "🌿" },
-  cultural: { bg: "bg-purple-50", text: "text-purple-700", emoji: "🎭" },
+  activity:   { bg: "bg-emerald-50", text: "text-emerald-700", emoji: "🎯" },
+  transport:  { bg: "bg-slate-50",  text: "text-slate-600",   emoji: "🚌" },
+  shopping:   { bg: "bg-pink-50",   text: "text-pink-700",    emoji: "🛍️" },
+  nature:     { bg: "bg-green-50",  text: "text-green-700",   emoji: "🌿" },
+  cultural:   { bg: "bg-purple-50", text: "text-purple-700",  emoji: "🎭" },
 };
 
 function ActivityCard({ activity }: { activity: ItineraryActivity }) {
   const style = ACTIVITY_TYPE_STYLES[activity.type] || ACTIVITY_TYPE_STYLES.activity;
-
   return (
     <div className="flex gap-3 p-3 rounded-xl bg-white border border-slate-100 hover:border-slate-200 transition-colors">
       <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center flex-none text-base", style.bg)}>
@@ -27,8 +26,7 @@ function ActivityCard({ activity }: { activity: ItineraryActivity }) {
           <h4 className="font-semibold text-slate-800 text-sm">{activity.name}</h4>
           {activity.cost !== undefined && activity.cost > 0 && (
             <span className="text-xs text-slate-500 flex-none flex items-center gap-0.5">
-              <DollarSign className="w-3 h-3" />
-              {activity.cost}
+              <DollarSign className="w-3 h-3" />{activity.cost}
             </span>
           )}
         </div>
@@ -36,21 +34,18 @@ function ActivityCard({ activity }: { activity: ItineraryActivity }) {
         <div className="flex items-center gap-3 mt-1.5">
           {activity.duration && (
             <span className="flex items-center gap-1 text-xs text-slate-400">
-              <Clock className="w-3 h-3" />
-              {activity.duration}
+              <Clock className="w-3 h-3" />{activity.duration}
             </span>
           )}
           {activity.address && (
             <span className="flex items-center gap-1 text-xs text-slate-400 truncate">
-              <MapPin className="w-3 h-3 flex-none" />
-              {activity.address}
+              <MapPin className="w-3 h-3 flex-none" />{activity.address}
             </span>
           )}
         </div>
         {activity.tips && (
           <p className="text-xs text-amber-600 mt-1.5 flex items-start gap-1">
-            <Lightbulb className="w-3 h-3 flex-none mt-0.5" />
-            {activity.tips}
+            <Lightbulb className="w-3 h-3 flex-none mt-0.5" />{activity.tips}
           </p>
         )}
       </div>
@@ -90,7 +85,6 @@ function DayCard({ day, defaultOpen = false }: { day: DayItinerary; defaultOpen?
           <span className="text-xs font-medium opacity-80">Day</span>
           <span className="text-lg font-bold leading-none">{day.day}</span>
         </div>
-
         <div className="flex-1 text-left">
           <h3 className="font-bold text-slate-800">{day.title}</h3>
           <div className="flex items-center gap-2 mt-0.5">
@@ -99,19 +93,12 @@ function DayCard({ day, defaultOpen = false }: { day: DayItinerary; defaultOpen?
             <span className="text-xs text-slate-500">{day.theme}</span>
           </div>
         </div>
-
         <div className="flex items-center gap-3 flex-none">
           <div className="text-right">
             <p className="text-xs text-slate-400">Est. cost</p>
-            <p className="text-sm font-semibold text-ocean-600">
-              ~${day.estimatedDailyCost}
-            </p>
+            <p className="text-sm font-semibold text-ocean-600">~${day.estimatedDailyCost}</p>
           </div>
-          {isOpen ? (
-            <ChevronUp className="w-4 h-4 text-slate-400" />
-          ) : (
-            <ChevronDown className="w-4 h-4 text-slate-400" />
-          )}
+          {isOpen ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
         </div>
       </button>
 
@@ -124,12 +111,8 @@ function DayCard({ day, defaultOpen = false }: { day: DayItinerary; defaultOpen?
                 <h4 className="text-sm font-semibold text-slate-700">Morning</h4>
               </div>
               <div className="space-y-2 pl-6">
-                {day.morning.map((act, i) => (
-                  <ActivityCard key={i} activity={act} />
-                ))}
-                {day.meals.breakfast && (
-                  <MealBadge label="Breakfast" meal={day.meals.breakfast} />
-                )}
+                {day.morning.map((act, i) => <ActivityCard key={i} activity={act} />)}
+                {day.meals.breakfast && <MealBadge label="Breakfast" meal={day.meals.breakfast} />}
               </div>
             </section>
           )}
@@ -141,12 +124,8 @@ function DayCard({ day, defaultOpen = false }: { day: DayItinerary; defaultOpen?
                 <h4 className="text-sm font-semibold text-slate-700">Afternoon</h4>
               </div>
               <div className="space-y-2 pl-6">
-                {day.afternoon.map((act, i) => (
-                  <ActivityCard key={i} activity={act} />
-                ))}
-                {day.meals.lunch && (
-                  <MealBadge label="Lunch" meal={day.meals.lunch} />
-                )}
+                {day.afternoon.map((act, i) => <ActivityCard key={i} activity={act} />)}
+                {day.meals.lunch && <MealBadge label="Lunch" meal={day.meals.lunch} />}
               </div>
             </section>
           )}
@@ -158,12 +137,8 @@ function DayCard({ day, defaultOpen = false }: { day: DayItinerary; defaultOpen?
                 <h4 className="text-sm font-semibold text-slate-700">Evening</h4>
               </div>
               <div className="space-y-2 pl-6">
-                {day.evening.map((act, i) => (
-                  <ActivityCard key={i} activity={act} />
-                ))}
-                {day.meals.dinner && (
-                  <MealBadge label="Dinner" meal={day.meals.dinner} />
-                )}
+                {day.evening.map((act, i) => <ActivityCard key={i} activity={act} />)}
+                {day.meals.dinner && <MealBadge label="Dinner" meal={day.meals.dinner} />}
               </div>
             </section>
           )}
@@ -177,8 +152,7 @@ function DayCard({ day, defaultOpen = false }: { day: DayItinerary; defaultOpen?
               <ul className="space-y-1">
                 {day.tips.map((tip, i) => (
                   <li key={i} className="text-xs text-amber-700 flex items-start gap-1.5">
-                    <span className="flex-none mt-0.5">•</span>
-                    {tip}
+                    <span className="flex-none mt-0.5">•</span>{tip}
                   </li>
                 ))}
               </ul>
@@ -191,12 +165,14 @@ function DayCard({ day, defaultOpen = false }: { day: DayItinerary; defaultOpen?
 }
 
 interface ItineraryDisplayProps {
-  itinerary: DayItinerary[];
+  itineraries: ItineraryOption[];
   generalTips?: string[];
 }
 
-export function ItineraryDisplay({ itinerary, generalTips }: ItineraryDisplayProps) {
-  if (!itinerary?.length) {
+export function ItineraryDisplay({ itineraries, generalTips }: ItineraryDisplayProps) {
+  const [selected, setSelected] = useState(0);
+
+  if (!itineraries?.length) {
     return (
       <div className="text-center py-8 text-slate-500">
         <span className="text-4xl block mb-3">🗺️</span>
@@ -205,8 +181,40 @@ export function ItineraryDisplay({ itinerary, generalTips }: ItineraryDisplayPro
     );
   }
 
+  const active = itineraries[selected];
+
   return (
     <div className="space-y-4">
+      {/* Option selector */}
+      <div className="bg-white rounded-2xl border border-slate-100 p-2 flex gap-2">
+        {itineraries.map((opt, i) => (
+          <button
+            key={opt.id}
+            onClick={() => setSelected(i)}
+            className={cn(
+              "flex-1 rounded-xl px-3 py-3 text-left transition-all",
+              selected === i
+                ? "bg-gradient-to-br from-ocean-500 to-primary-600 text-white shadow-md"
+                : "hover:bg-slate-50 text-slate-600"
+            )}
+          >
+            <div className="flex items-center gap-2 mb-0.5">
+              <span className="text-xl">{opt.emoji}</span>
+              <span className={cn("text-xs font-semibold uppercase tracking-wide", selected === i ? "text-white/70" : "text-slate-400")}>
+                Option {i + 1}
+              </span>
+            </div>
+            <p className={cn("font-bold text-sm", selected === i ? "text-white" : "text-slate-800")}>
+              {opt.name}
+            </p>
+            <p className={cn("text-xs mt-0.5 line-clamp-2", selected === i ? "text-white/75" : "text-slate-500")}>
+              {opt.description}
+            </p>
+          </button>
+        ))}
+      </div>
+
+      {/* General tips */}
       {generalTips && generalTips.length > 0 && (
         <div className="bg-gradient-to-r from-primary-50 to-ocean-50 rounded-2xl p-4 border border-primary-100">
           <h3 className="font-bold text-slate-800 mb-3 flex items-center gap-2">
@@ -216,16 +224,16 @@ export function ItineraryDisplay({ itinerary, generalTips }: ItineraryDisplayPro
           <ul className="space-y-2">
             {generalTips.map((tip, i) => (
               <li key={i} className="text-sm text-slate-600 flex items-start gap-2">
-                <span className="text-primary-500 font-bold flex-none">{i + 1}.</span>
-                {tip}
+                <span className="text-primary-500 font-bold flex-none">{i + 1}.</span>{tip}
               </li>
             ))}
           </ul>
         </div>
       )}
 
+      {/* Active itinerary days */}
       <div className="space-y-3">
-        {itinerary.map((day, i) => (
+        {active.days?.map((day, i) => (
           <DayCard key={day.day} day={day} defaultOpen={i === 0} />
         ))}
       </div>

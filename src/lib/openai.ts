@@ -81,34 +81,43 @@ export async function generateItinerary(
     ? Math.min(7, Math.max(1, Math.round((new Date(returnDate).getTime() - new Date(departureDate).getTime()) / msPerDay)))
     : 3;
 
-  const prompt = `Create a ${tripDays}-day travel itinerary in JSON.
-Trip: ${travelInfo.source} → ${travelInfo.destination}, ${departureDate} to ${returnDate || ""}
-Budget: ${travelInfo.budget} ${travelInfo.currency || "USD"}, Style: ${Array.isArray(travelInfo.travelStyle) ? travelInfo.travelStyle.join(", ") : travelInfo.travelStyle}, Travelers: ${travelInfo.travelers || 1}
+  const style = Array.isArray(travelInfo.travelStyle)
+    ? travelInfo.travelStyle.join(", ")
+    : travelInfo.travelStyle || "balanced";
 
-Return ONLY this JSON (no extra text):
+  const daySchema = `{"day":1,"date":"YYYY-MM-DD","title":"","theme":"","morning":[{"name":"","description":"","duration":"","cost":0,"type":"attraction","address":"","tips":""}],"afternoon":[{"name":"","description":"","duration":"","cost":0,"type":"activity","address":"","tips":""}],"evening":[{"name":"","description":"","duration":"","cost":0,"type":"cultural","address":"","tips":""}],"meals":{"breakfast":{"restaurant":"","cuisine":"","priceRange":"$","specialty":"","address":""},"lunch":{"restaurant":"","cuisine":"","priceRange":"$$","specialty":"","address":""},"dinner":{"restaurant":"","cuisine":"","priceRange":"$$","specialty":"","address":""}},"tips":[""],"estimatedDailyCost":0}`;
+
+  const prompt = `Create 2 distinct ${tripDays}-day travel itineraries for:
+Trip: ${travelInfo.source} → ${travelInfo.destination}, ${departureDate} to ${returnDate || ""}
+Budget: ${travelInfo.budget} ${travelInfo.currency || "USD"}, Style: ${style}, Travelers: ${travelInfo.travelers || 1}
+
+The 2 itineraries must have clearly different themes/vibes — e.g. "Cultural Deep-Dive vs. Leisure & Food" or "Adventure vs. Relaxed Explorer". Choose themes that suit the destination and travel style.
+
+Return ONLY this JSON:
 {
-  "itinerary": [
+  "itineraries": [
     {
-      "day": 1, "date": "YYYY-MM-DD", "title": "string", "theme": "string",
-      "morning": [{"name":"","description":"","duration":"","cost":0,"type":"attraction","address":"","tips":""}],
-      "afternoon": [{"name":"","description":"","duration":"","cost":0,"type":"activity","address":"","tips":""}],
-      "evening": [{"name":"","description":"","duration":"","cost":0,"type":"cultural","address":"","tips":""}],
-      "meals": {
-        "breakfast": {"restaurant":"","cuisine":"","priceRange":"$","specialty":"","address":""},
-        "lunch": {"restaurant":"","cuisine":"","priceRange":"$$","specialty":"","address":""},
-        "dinner": {"restaurant":"","cuisine":"","priceRange":"$$","specialty":"","address":""}
-      },
-      "tips": ["string"],
-      "estimatedDailyCost": 0
+      "id": "option-1",
+      "name": "Short descriptive name (e.g. Cultural Explorer)",
+      "description": "One sentence describing the vibe of this itinerary",
+      "emoji": "single relevant emoji",
+      "days": [${daySchema}]
+    },
+    {
+      "id": "option-2",
+      "name": "Short descriptive name (e.g. Leisure & Flavours)",
+      "description": "One sentence describing the vibe of this itinerary",
+      "emoji": "single relevant emoji",
+      "days": [${daySchema}]
     }
   ],
-  "generalTips": ["string","string","string"],
-  "bestTimeToVisit": "string",
-  "weatherInfo": "string",
-  "visaInfo": "string",
+  "generalTips": ["","",""],
+  "bestTimeToVisit": "",
+  "weatherInfo": "",
+  "visaInfo": "",
   "costBreakdown": {"flights":0,"accommodation":0,"activities":0,"meals":0,"transport":0,"miscellaneous":0,"total":0,"currency":"USD","withinBudget":true,"budgetDifference":0}
 }
-Limit: 1-2 activities per time period. Be concise but specific (real place names).`;
+Rules: 1-2 activities per time slot. Use real place/restaurant names. Keep JSON compact.`;
 
   const response = await client.chat.completions.create({
     model: "gpt-4o-mini",
@@ -119,8 +128,8 @@ Limit: 1-2 activities per time period. Be concise but specific (real place names
       },
       { role: "user", content: prompt },
     ],
-    temperature: 0.7,
-    max_tokens: 2500,
+    temperature: 0.8,
+    max_tokens: 3500,
     response_format: { type: "json_object" },
   });
 
