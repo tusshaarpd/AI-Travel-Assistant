@@ -101,13 +101,54 @@ export async function POST(request: NextRequest) {
       console.error("Failed to parse itinerary JSON");
     }
 
+    // Overwrite AI-estimated costs with real prices from the APIs
+    const outboundFlights = flightsResult.value.outbound;
+    const returnFlights = flightsResult.value.returning;
+    const hotels = hotelsResult.value;
+
+    const cheapestOutbound = outboundFlights.length
+      ? Math.min(...outboundFlights.map((f) => f.price))
+      : 0;
+    const cheapestReturn = returnFlights.length
+      ? Math.min(...returnFlights.map((f) => f.price))
+      : 0;
+    const travelers = travelInfo.travelers || 1;
+    const realFlightCost = (cheapestOutbound + cheapestReturn) * travelers;
+
+    const cheapestHotel = hotels.length
+      ? hotels.reduce((a, b) => (a.totalPrice < b.totalPrice ? a : b))
+      : null;
+    const realAccommodationCost = cheapestHotel?.totalPrice ?? 0;
+
+    const aiBreakdown = (itineraryData.costBreakdown ?? {}) as Record<string, unknown>;
+    const activities = (aiBreakdown.activities as number) ?? 0;
+    const meals = (aiBreakdown.meals as number) ?? 0;
+    const transport = (aiBreakdown.transport as number) ?? 0;
+    const miscellaneous = (aiBreakdown.miscellaneous as number) ?? 0;
+
+    const realTotal = realFlightCost + realAccommodationCost + activities + meals + transport + miscellaneous;
+    const budget = travelInfo.budget ?? 0;
+
+    const costBreakdown = {
+      flights: realFlightCost,
+      accommodation: realAccommodationCost,
+      activities,
+      meals,
+      transport,
+      miscellaneous,
+      total: realTotal,
+      currency: travelInfo.currency || "USD",
+      withinBudget: budget > 0 ? realTotal <= budget : true,
+      budgetDifference: budget > 0 ? budget - realTotal : 0,
+    };
+
     const travelPlan: TravelPlan = {
       travelInfo,
-      outboundFlights: flightsResult.value.outbound,
-      returnFlights: flightsResult.value.returning,
-      hotels: hotelsResult.value,
+      outboundFlights,
+      returnFlights,
+      hotels,
       itinerary: itineraryData.itinerary || [],
-      costBreakdown: itineraryData.costBreakdown,
+      costBreakdown,
       generalTips: itineraryData.generalTips || [],
       bestTimeToVisit: (itineraryData as Record<string, unknown>).bestTimeToVisit as string | undefined,
       weatherInfo: (itineraryData as Record<string, unknown>).weatherInfo as string | undefined,
