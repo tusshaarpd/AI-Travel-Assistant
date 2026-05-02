@@ -111,9 +111,15 @@ export function ChatInterface() {
         body: JSON.stringify({ travelInfo: info }),
       });
 
-      if (!response.ok) throw new Error("Failed to generate plan");
-      const plan: TravelPlan = await response.json();
-      setTravelPlan(plan);
+      const data = await response.json();
+
+      if (!response.ok) {
+        addMessage("assistant", `Sorry, I couldn't complete your travel plan. ${data.error || "Please try again."}`);
+        setStage("confirming");
+        return;
+      }
+
+      setTravelPlan(data as TravelPlan);
       setStage("results");
     } catch (error) {
       console.error("Plan generation error:", error);
