@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Coffee, Sun, Moon, ChevronDown, ChevronUp, MapPin, Clock, DollarSign, Lightbulb } from "lucide-react";
+import { Sun, Moon, ChevronDown, ChevronUp, MapPin, Clock, Lightbulb } from "lucide-react";
 import type { DayItinerary, ItineraryActivity } from "@/types";
-import { formatDate, cn } from "@/lib/utils";
+import { formatDate, getCurrencySymbol, cn } from "@/lib/utils";
 
 const ACTIVITY_TYPE_STYLES: Record<string, { bg: string; text: string; emoji: string }> = {
   attraction: { bg: "bg-blue-50",   text: "text-blue-700",   emoji: "🏛️" },
@@ -14,7 +14,7 @@ const ACTIVITY_TYPE_STYLES: Record<string, { bg: string; text: string; emoji: st
   cultural:   { bg: "bg-purple-50", text: "text-purple-700", emoji: "🎭" },
 };
 
-function ActivityCard({ activity }: { activity: ItineraryActivity }) {
+function ActivityCard({ activity, currencySymbol }: { activity: ItineraryActivity; currencySymbol: string }) {
   const style = ACTIVITY_TYPE_STYLES[activity.type] || ACTIVITY_TYPE_STYLES.activity;
   return (
     <div className="flex gap-3 p-3 rounded-xl bg-white border border-slate-100 hover:border-slate-200 transition-colors">
@@ -25,8 +25,8 @@ function ActivityCard({ activity }: { activity: ItineraryActivity }) {
         <div className="flex items-start justify-between gap-2">
           <h4 className="font-semibold text-slate-800 text-sm">{activity.name}</h4>
           {activity.cost !== undefined && activity.cost > 0 && (
-            <span className="text-xs text-slate-500 flex-none flex items-center gap-0.5">
-              <DollarSign className="w-3 h-3" />{activity.cost}
+            <span className="text-xs text-slate-500 flex-none">
+              {currencySymbol}{activity.cost.toLocaleString()}
             </span>
           )}
         </div>
@@ -72,7 +72,7 @@ function MealBadge({ label, meal }: { label: string; meal: { restaurant: string;
   );
 }
 
-function DayCard({ day, defaultOpen = false }: { day: DayItinerary; defaultOpen?: boolean }) {
+function DayCard({ day, defaultOpen = false, currencySymbol }: { day: DayItinerary; defaultOpen?: boolean; currencySymbol: string }) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
@@ -96,7 +96,7 @@ function DayCard({ day, defaultOpen = false }: { day: DayItinerary; defaultOpen?
         <div className="flex items-center gap-3 flex-none">
           <div className="text-right">
             <p className="text-xs text-slate-400">Est. cost</p>
-            <p className="text-sm font-semibold text-ocean-600">~${day.estimatedDailyCost}</p>
+            <p className="text-sm font-semibold text-ocean-600">~{currencySymbol}{day.estimatedDailyCost.toLocaleString()}</p>
           </div>
           {isOpen ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
         </div>
@@ -111,7 +111,7 @@ function DayCard({ day, defaultOpen = false }: { day: DayItinerary; defaultOpen?
                 <h4 className="text-sm font-semibold text-slate-700">Morning</h4>
               </div>
               <div className="space-y-2 pl-6">
-                {day.morning.map((act, i) => <ActivityCard key={i} activity={act} />)}
+                {day.morning.map((act, i) => <ActivityCard key={i} activity={act} currencySymbol={currencySymbol} />)}
                 {day.meals.breakfast && <MealBadge label="Breakfast" meal={day.meals.breakfast} />}
               </div>
             </section>
@@ -124,7 +124,7 @@ function DayCard({ day, defaultOpen = false }: { day: DayItinerary; defaultOpen?
                 <h4 className="text-sm font-semibold text-slate-700">Afternoon</h4>
               </div>
               <div className="space-y-2 pl-6">
-                {day.afternoon.map((act, i) => <ActivityCard key={i} activity={act} />)}
+                {day.afternoon.map((act, i) => <ActivityCard key={i} activity={act} currencySymbol={currencySymbol} />)}
                 {day.meals.lunch && <MealBadge label="Lunch" meal={day.meals.lunch} />}
               </div>
             </section>
@@ -137,7 +137,7 @@ function DayCard({ day, defaultOpen = false }: { day: DayItinerary; defaultOpen?
                 <h4 className="text-sm font-semibold text-slate-700">Evening</h4>
               </div>
               <div className="space-y-2 pl-6">
-                {day.evening.map((act, i) => <ActivityCard key={i} activity={act} />)}
+                {day.evening.map((act, i) => <ActivityCard key={i} activity={act} currencySymbol={currencySymbol} />)}
                 {day.meals.dinner && <MealBadge label="Dinner" meal={day.meals.dinner} />}
               </div>
             </section>
@@ -167,9 +167,11 @@ function DayCard({ day, defaultOpen = false }: { day: DayItinerary; defaultOpen?
 interface ItineraryDisplayProps {
   itinerary: DayItinerary[];
   generalTips?: string[];
+  currency?: string;
 }
 
-export function ItineraryDisplay({ itinerary, generalTips }: ItineraryDisplayProps) {
+export function ItineraryDisplay({ itinerary, generalTips, currency = "USD" }: ItineraryDisplayProps) {
+  const currencySymbol = getCurrencySymbol(currency);
   if (!itinerary?.length) {
     return (
       <div className="text-center py-8 text-slate-500">
@@ -198,7 +200,7 @@ export function ItineraryDisplay({ itinerary, generalTips }: ItineraryDisplayPro
       )}
       <div className="space-y-3">
         {itinerary.map((day, i) => (
-          <DayCard key={day.day} day={day} defaultOpen={i === 0} />
+          <DayCard key={day.day} day={day} defaultOpen={i === 0} currencySymbol={currencySymbol} />
         ))}
       </div>
     </div>

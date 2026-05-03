@@ -85,18 +85,73 @@ const CITY_TO_IATA: Record<string, string> = {
   "tel aviv": "TLV",
   "riyadh": "RUH",
 
-  // Southeast Asia & Bali
+  // Southeast Asia & Pacific
   "bali": "DPS", "denpasar": "DPS",
   "phuket": "HKT",
+  "chiang mai": "CNX",
+  "ho chi minh city": "SGN", "saigon": "SGN",
+  "hanoi": "HAN",
+  "phnom penh": "PNH",
+  "vientiane": "VTE",
+  "yangon": "RGN", "rangoon": "RGN",
   "colombo": "CMB",
   "kathmandu": "KTM",
+  "maldives": "MLE", "male": "MLE",
+  "papeete": "PPT", "tahiti": "PPT",
+  "nadi": "NAN", "fiji": "NAN",
+
+  // Country-level fallbacks (map to primary gateway airport)
+  "nepal": "KTM",
+  "thailand": "BKK",
+  "indonesia": "CGK",
+  "japan": "NRT",
+  "china": "PEK",
+  "india": "DEL",
+  "australia": "SYD",
+  "france": "CDG",
+  "germany": "FRA",
+  "spain": "MAD",
+  "italy": "FCO",
+  "uk": "LHR", "united kingdom": "LHR", "england": "LHR",
+  "usa": "JFK", "united states": "JFK", "america": "JFK",
+  "canada": "YYZ",
+  "brazil": "GRU", "sao paulo": "GRU",
+  "argentina": "EZE", "buenos aires": "EZE",
+  "south africa": "JNB",
+  "egypt": "CAI",
+  "kenya": "NBO",
+  "uae": "DXB", "emirates": "DXB",
+  "qatar": "DOH",
+  "saudi arabia": "RUH",
+  "israel": "TLV",
+  "sri lanka": "CMB",
+  "malaysia": "KUL",
+  "philippines": "MNL",
+  "vietnam": "SGN",
+  "cambodia": "PNH",
+  "myanmar": "RGN",
+  "laos": "VTE",
+  "taiwan": "TPE",
+  "south korea": "ICN", "korea": "ICN",
+  "new zealand": "AKL",
+  "mexico": "MEX",
+  "greece": "ATH",
+  "turkey": "IST",
+  "portugal": "LIS",
+  "netherlands": "AMS", "holland": "AMS",
+  "switzerland": "ZRH",
+  "austria": "VIE",
+  "belgium": "BRU",
 };
 
 function resolveIATA(cityOrCode: string): string {
   const normalized = cityOrCode.trim().toLowerCase();
-  // Already looks like an IATA code (2-3 uppercase letters)
   if (/^[a-z]{3}$/i.test(normalized)) return cityOrCode.toUpperCase();
-  return CITY_TO_IATA[normalized] || cityOrCode.toUpperCase();
+  const mapped = CITY_TO_IATA[normalized];
+  if (mapped) return mapped;
+  throw new Error(
+    `Could not find an airport for "${cityOrCode}". Please provide a city name (e.g. "Kathmandu") or a 3-letter IATA code (e.g. "KTM").`
+  );
 }
 
 async function fetchSerpAPI(params: Record<string, string>): Promise<Record<string, unknown>> {

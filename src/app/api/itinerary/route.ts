@@ -52,30 +52,27 @@ export async function POST(request: NextRequest) {
       ),
     ]);
 
-    if (flightsResult.status === "rejected") {
-      const reason = flightsResult.reason instanceof Error ? flightsResult.reason.message : String(flightsResult.reason);
-      console.error("Flight search rejected:", reason);
-      return NextResponse.json(
-        { error: `Flight search failed: ${reason}` },
-        { status: 502 }
-      );
-    }
-
-    if (hotelsResult.status === "rejected") {
-      const reason = hotelsResult.reason instanceof Error ? hotelsResult.reason.message : String(hotelsResult.reason);
-      console.error("Hotel search rejected:", reason);
-      return NextResponse.json(
-        { error: `Hotel search failed: ${reason}` },
-        { status: 502 }
-      );
-    }
-
+    // Itinerary generation is the core content — fail hard only if it fails
     if (itineraryResult.status === "rejected") {
       const reason = itineraryResult.reason instanceof Error ? itineraryResult.reason.message : String(itineraryResult.reason);
       return NextResponse.json(
         { error: `Itinerary generation failed: ${reason}` },
         { status: 502 }
       );
+    }
+
+    const warnings: string[] = [];
+
+    if (flightsResult.status === "rejected") {
+      const reason = flightsResult.reason instanceof Error ? flightsResult.reason.message : String(flightsResult.reason);
+      console.error("Flight search rejected:", reason);
+      warnings.push(`Flight search unavailable: ${reason}`);
+    }
+
+    if (hotelsResult.status === "rejected") {
+      const reason = hotelsResult.reason instanceof Error ? hotelsResult.reason.message : String(hotelsResult.reason);
+      console.error("Hotel search rejected:", reason);
+      warnings.push(`Hotel search unavailable: ${reason}`);
     }
 
     let itineraryData = {
@@ -98,13 +95,18 @@ export async function POST(request: NextRequest) {
     try {
       itineraryData = JSON.parse(itineraryResult.value);
     } catch {
-      console.error("Failed to parse itinerary JSON");
+      const preview = itineraryResult.value?.slice(0, 300);
+      console.error("Failed to parse itinerary JSON. Raw response preview:", preview);
+      return NextResponse.json(
+        { error: "Itinerary generation produced invalid JSON. Please try again." },
+        { status: 502 }
+      );
     }
 
-    // Overwrite AI-estimated costs with real prices from the APIs
-    const outboundFlights = flightsResult.value.outbound;
-    const returnFlights = flightsResult.value.returning;
-    const hotels = hotelsResult.value;
+    // Use real API data where available, fall back to empty arrays
+    const outboundFlights = flightsResult.status === "fulfilled" ? flightsResult.value.outbound : [];
+    const returnFlights = flightsResult.status === "fulfilled" ? flightsResult.value.returning : [];
+    const hotels = hotelsResult.status === "fulfilled" ? hotelsResult.value : [];
 
     const cheapestOutbound = outboundFlights.length
       ? Math.min(...outboundFlights.map((f) => f.price))
@@ -155,6 +157,7 @@ export async function POST(request: NextRequest) {
       bestTimeToVisit: raw.bestTimeToVisit as string | undefined,
       weatherInfo: raw.weatherInfo as string | undefined,
       visaInfo: raw.visaInfo as string | undefined,
+      warnings: warnings.length ? warnings : undefined,
     };
 
     return NextResponse.json(travelPlan);

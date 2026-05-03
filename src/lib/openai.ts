@@ -40,7 +40,13 @@ Always respond in JSON format with this structure:
 Stages: greeting → collect_source → collect_destination → collect_dates → collect_budget → collect_style → confirming → generating
 
 For dates, always convert to YYYY-MM-DD format.
-For budget, extract the numeric value.
+For budget, extract the numeric value and detect currency:
+- "Rs", "INR", "rupees", "₹" → currency: "INR"
+- "$", "USD", "dollars" → currency: "USD"
+- "€", "EUR", "euros" → currency: "EUR"
+- "£", "GBP", "pounds" → currency: "GBP"
+- "¥", "JPY", "yen" → currency: "JPY"
+Default to "USD" if unclear.
 For travel style, identify from: adventure, relaxing, cultural, family, luxury, budget, romantic, business, eco, foodie.`;
 
 export async function getChatResponse(
@@ -85,33 +91,36 @@ export async function generateItinerary(
     ? travelInfo.travelStyle.join(", ")
     : (travelInfo.travelStyle as string) || "balanced";
 
-  const daySchema = `{"day":1,"date":"YYYY-MM-DD","title":"","theme":"","morning":[{"name":"","description":"","duration":"2h","cost":0,"type":"attraction","address":"","tips":""}],"afternoon":[{"name":"","description":"","duration":"2h","cost":0,"type":"activity","address":"","tips":""}],"evening":[{"name":"","description":"","duration":"2h","cost":0,"type":"cultural","address":"","tips":""}],"meals":{"breakfast":{"restaurant":"","cuisine":"","priceRange":"$","specialty":"","address":""},"lunch":{"restaurant":"","cuisine":"","priceRange":"$$","specialty":"","address":""},"dinner":{"restaurant":"","cuisine":"","priceRange":"$$","specialty":"","address":""}},"tips":[""],"estimatedDailyCost":0}`;
+  const currency = (travelInfo.currency as string) || "USD";
+
+  // Lean schema — short descriptions keep token count predictable
+  const daySchema = `{"day":1,"date":"YYYY-MM-DD","title":"","theme":"","morning":[{"name":"","description":"One sentence.","duration":"2h","cost":0,"type":"attraction","tips":""}],"afternoon":[{"name":"","description":"One sentence.","duration":"2h","cost":0,"type":"activity","tips":""}],"evening":[{"name":"","description":"One sentence.","duration":"2h","cost":0,"type":"cultural","tips":""}],"meals":{"breakfast":{"restaurant":"","cuisine":"","priceRange":"$"},"lunch":{"restaurant":"","cuisine":"","priceRange":"$$"},"dinner":{"restaurant":"","cuisine":"","priceRange":"$$"}},"tips":["local tip"],"estimatedDailyCost":0}`;
 
   const prompt = `Create a ${tripDays}-day travel itinerary.
 Trip: ${travelInfo.source} → ${travelInfo.destination}, ${departureDate} to ${returnDate || ""}
-Budget: ${travelInfo.budget} ${travelInfo.currency || "USD"}, Style: ${style}, Travelers: ${travelInfo.travelers || 1}
+Budget: ${travelInfo.budget} ${currency}, Style: ${style}, Travelers: ${travelInfo.travelers || 1}
 
-Return ONLY this JSON (no extra text):
-{
-  "itinerary": [${daySchema}],
-  "generalTips": ["","",""],
-  "bestTimeToVisit": "",
-  "weatherInfo": "",
-  "visaInfo": "",
-  "costBreakdown": {"flights":0,"accommodation":0,"activities":0,"meals":0,"transport":0,"miscellaneous":0,"total":0,"currency":"USD","withinBudget":true,"budgetDifference":0}
-}
-Rules: 1 activity per time slot. Real place/restaurant names. Compact JSON.`;
+Return ONLY valid compact JSON matching this structure (one object per day, no extra fields):
+{"itinerary":[${daySchema}],"generalTips":["","",""],"bestTimeToVisit":"","weatherInfo":"","visaInfo":"","costBreakdown":{"flights":0,"accommodation":0,"activities":0,"meals":0,"transport":0,"miscellaneous":0,"total":0,"currency":"${currency}","withinBudget":true,"budgetDifference":0}}
+
+Rules: descriptions max 1 sentence. Real place/restaurant names. All ${tripDays} days required.`;
 
   const response = await client.chat.completions.create({
     model: "gpt-4o-mini",
     messages: [
-      { role: "system", content: "Travel planner. Return only valid compact JSON, no markdown." },
+      { role: "system", content: "Travel planner. Return only valid compact JSON, no markdown, no truncation." },
       { role: "user", content: prompt },
     ],
-    temperature: 0.8,
-    max_tokens: 2000,
+    temperature: 0.7,
+    max_tokens: 8000,
     response_format: { type: "json_object" },
   });
 
-  return response.choices[0]?.message?.content || "";
+  const choice = response.choices[0];
+  if (choice?.finish_reason === "length") {
+    console.error("[generateItinerary] Response truncated (finish_reason=length). Partial content:", choice.message?.content?.slice(0, 200));
+    throw new Error("Itinerary response was too long and got cut off. Try a shorter trip or fewer days.");
+  }
+
+  return choice?.message?.content || "";
 }
