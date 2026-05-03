@@ -28,7 +28,7 @@ export function TravelResults({ plan, onReset }: TravelResultsProps) {
   const [activeTab, setActiveTab] = useState<Tab>("overview");
   const nights = plan.travelInfo.returnDate
     ? calculateNights(plan.travelInfo.departureDate!, plan.travelInfo.returnDate)
-    : plan.itineraries?.[0]?.days?.length ?? 0;
+    : plan.itinerary?.length ?? 0;
 
   return (
     <div className="flex flex-col h-full">
@@ -121,10 +121,10 @@ export function TravelResults({ plan, onReset }: TravelResultsProps) {
               />
               <StatCard
                 emoji="🗺️"
-                label="Plans"
-                value={`${plan.itineraries?.length ?? 0} options`}
-                sub="days"
-                subValue={`${plan.itineraries?.[0]?.days?.length ?? 0} planned`}
+                label="Days"
+                value={`${plan.itinerary?.length ?? 0}`}
+                sub="planned"
+                subValue="activities"
               />
             </div>
 
@@ -214,7 +214,7 @@ export function TravelResults({ plan, onReset }: TravelResultsProps) {
         {activeTab === "itinerary" && (
           <div className="animate-fade-in">
             <ItineraryDisplay
-              itineraries={plan.itineraries ?? []}
+              itinerary={plan.itinerary ?? []}
               generalTips={plan.generalTips}
             />
           </div>

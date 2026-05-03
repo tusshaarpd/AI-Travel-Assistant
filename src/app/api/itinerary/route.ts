@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
       outboundFlights,
       returnFlights,
       hotels,
-      itineraries: (raw.itineraries as TravelPlan["itineraries"]) || [],
+      itinerary: (raw.itinerary as TravelPlan["itinerary"]) || [],
       costBreakdown,
       generalTips: (raw.generalTips as string[]) || [],
       bestTimeToVisit: raw.bestTimeToVisit as string | undefined,

@@ -83,53 +83,33 @@ export async function generateItinerary(
 
   const style = Array.isArray(travelInfo.travelStyle)
     ? travelInfo.travelStyle.join(", ")
-    : travelInfo.travelStyle || "balanced";
+    : (travelInfo.travelStyle as string) || "balanced";
 
-  const daySchema = `{"day":1,"date":"YYYY-MM-DD","title":"","theme":"","morning":[{"name":"","description":"","duration":"","cost":0,"type":"attraction","address":"","tips":""}],"afternoon":[{"name":"","description":"","duration":"","cost":0,"type":"activity","address":"","tips":""}],"evening":[{"name":"","description":"","duration":"","cost":0,"type":"cultural","address":"","tips":""}],"meals":{"breakfast":{"restaurant":"","cuisine":"","priceRange":"$","specialty":"","address":""},"lunch":{"restaurant":"","cuisine":"","priceRange":"$$","specialty":"","address":""},"dinner":{"restaurant":"","cuisine":"","priceRange":"$$","specialty":"","address":""}},"tips":[""],"estimatedDailyCost":0}`;
+  const daySchema = `{"day":1,"date":"YYYY-MM-DD","title":"","theme":"","morning":[{"name":"","description":"","duration":"2h","cost":0,"type":"attraction","address":"","tips":""}],"afternoon":[{"name":"","description":"","duration":"2h","cost":0,"type":"activity","address":"","tips":""}],"evening":[{"name":"","description":"","duration":"2h","cost":0,"type":"cultural","address":"","tips":""}],"meals":{"breakfast":{"restaurant":"","cuisine":"","priceRange":"$","specialty":"","address":""},"lunch":{"restaurant":"","cuisine":"","priceRange":"$$","specialty":"","address":""},"dinner":{"restaurant":"","cuisine":"","priceRange":"$$","specialty":"","address":""}},"tips":[""],"estimatedDailyCost":0}`;
 
-  const prompt = `Create 2 distinct ${tripDays}-day travel itineraries for:
+  const prompt = `Create a ${tripDays}-day travel itinerary.
 Trip: ${travelInfo.source} → ${travelInfo.destination}, ${departureDate} to ${returnDate || ""}
 Budget: ${travelInfo.budget} ${travelInfo.currency || "USD"}, Style: ${style}, Travelers: ${travelInfo.travelers || 1}
 
-The 2 itineraries must have clearly different themes/vibes — e.g. "Cultural Deep-Dive vs. Leisure & Food" or "Adventure vs. Relaxed Explorer". Choose themes that suit the destination and travel style.
-
-Return ONLY this JSON:
+Return ONLY this JSON (no extra text):
 {
-  "itineraries": [
-    {
-      "id": "option-1",
-      "name": "Short descriptive name (e.g. Cultural Explorer)",
-      "description": "One sentence describing the vibe of this itinerary",
-      "emoji": "single relevant emoji",
-      "days": [${daySchema}]
-    },
-    {
-      "id": "option-2",
-      "name": "Short descriptive name (e.g. Leisure & Flavours)",
-      "description": "One sentence describing the vibe of this itinerary",
-      "emoji": "single relevant emoji",
-      "days": [${daySchema}]
-    }
-  ],
+  "itinerary": [${daySchema}],
   "generalTips": ["","",""],
   "bestTimeToVisit": "",
   "weatherInfo": "",
   "visaInfo": "",
   "costBreakdown": {"flights":0,"accommodation":0,"activities":0,"meals":0,"transport":0,"miscellaneous":0,"total":0,"currency":"USD","withinBudget":true,"budgetDifference":0}
 }
-Rules: 1-2 activities per time slot. Use real place/restaurant names. Keep JSON compact.`;
+Rules: 1 activity per time slot. Real place/restaurant names. Compact JSON.`;
 
   const response = await client.chat.completions.create({
     model: "gpt-4o-mini",
     messages: [
-      {
-        role: "system",
-        content: "You are a travel planner. Respond only with valid compact JSON, no markdown.",
-      },
+      { role: "system", content: "Travel planner. Return only valid compact JSON, no markdown." },
       { role: "user", content: prompt },
     ],
     temperature: 0.8,
-    max_tokens: 3500,
+    max_tokens: 2000,
     response_format: { type: "json_object" },
   });
 

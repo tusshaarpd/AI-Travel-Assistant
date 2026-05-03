@@ -136,20 +136,12 @@ export interface CostBreakdown {
   budgetDifference: number;
 }
 
-export interface ItineraryOption {
-  id: string;
-  name: string;
-  description: string;
-  emoji: string;
-  days: DayItinerary[];
-}
-
 export interface TravelPlan {
   travelInfo: TravelInfo;
   outboundFlights: FlightOption[];
   returnFlights: FlightOption[];
   hotels: HotelOption[];
-  itineraries: ItineraryOption[];
+  itinerary: DayItinerary[];
   costBreakdown: CostBreakdown;
   generalTips: string[];
   bestTimeToVisit?: string;

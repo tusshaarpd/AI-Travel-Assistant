@@ -2,16 +2,16 @@
 
 import { useState } from "react";
 import { Coffee, Sun, Moon, ChevronDown, ChevronUp, MapPin, Clock, DollarSign, Lightbulb } from "lucide-react";
-import type { DayItinerary, ItineraryActivity, ItineraryOption } from "@/types";
+import type { DayItinerary, ItineraryActivity } from "@/types";
 import { formatDate, cn } from "@/lib/utils";
 
 const ACTIVITY_TYPE_STYLES: Record<string, { bg: string; text: string; emoji: string }> = {
-  attraction: { bg: "bg-blue-50", text: "text-blue-700", emoji: "🏛️" },
-  activity:   { bg: "bg-emerald-50", text: "text-emerald-700", emoji: "🎯" },
-  transport:  { bg: "bg-slate-50",  text: "text-slate-600",   emoji: "🚌" },
-  shopping:   { bg: "bg-pink-50",   text: "text-pink-700",    emoji: "🛍️" },
-  nature:     { bg: "bg-green-50",  text: "text-green-700",   emoji: "🌿" },
-  cultural:   { bg: "bg-purple-50", text: "text-purple-700",  emoji: "🎭" },
+  attraction: { bg: "bg-blue-50",   text: "text-blue-700",   emoji: "🏛️" },
+  activity:   { bg: "bg-emerald-50",text: "text-emerald-700",emoji: "🎯" },
+  transport:  { bg: "bg-slate-50",  text: "text-slate-600",  emoji: "🚌" },
+  shopping:   { bg: "bg-pink-50",   text: "text-pink-700",   emoji: "🛍️" },
+  nature:     { bg: "bg-green-50",  text: "text-green-700",  emoji: "🌿" },
+  cultural:   { bg: "bg-purple-50", text: "text-purple-700", emoji: "🎭" },
 };
 
 function ActivityCard({ activity }: { activity: ItineraryActivity }) {
@@ -165,14 +165,12 @@ function DayCard({ day, defaultOpen = false }: { day: DayItinerary; defaultOpen?
 }
 
 interface ItineraryDisplayProps {
-  itineraries: ItineraryOption[];
+  itinerary: DayItinerary[];
   generalTips?: string[];
 }
 
-export function ItineraryDisplay({ itineraries, generalTips }: ItineraryDisplayProps) {
-  const [selected, setSelected] = useState(0);
-
-  if (!itineraries?.length) {
+export function ItineraryDisplay({ itinerary, generalTips }: ItineraryDisplayProps) {
+  if (!itinerary?.length) {
     return (
       <div className="text-center py-8 text-slate-500">
         <span className="text-4xl block mb-3">🗺️</span>
@@ -181,40 +179,8 @@ export function ItineraryDisplay({ itineraries, generalTips }: ItineraryDisplayP
     );
   }
 
-  const active = itineraries[selected];
-
   return (
     <div className="space-y-4">
-      {/* Option selector */}
-      <div className="bg-white rounded-2xl border border-slate-100 p-2 flex gap-2">
-        {itineraries.map((opt, i) => (
-          <button
-            key={opt.id}
-            onClick={() => setSelected(i)}
-            className={cn(
-              "flex-1 rounded-xl px-3 py-3 text-left transition-all",
-              selected === i
-                ? "bg-gradient-to-br from-ocean-500 to-primary-600 text-white shadow-md"
-                : "hover:bg-slate-50 text-slate-600"
-            )}
-          >
-            <div className="flex items-center gap-2 mb-0.5">
-              <span className="text-xl">{opt.emoji}</span>
-              <span className={cn("text-xs font-semibold uppercase tracking-wide", selected === i ? "text-white/70" : "text-slate-400")}>
-                Option {i + 1}
-              </span>
-            </div>
-            <p className={cn("font-bold text-sm", selected === i ? "text-white" : "text-slate-800")}>
-              {opt.name}
-            </p>
-            <p className={cn("text-xs mt-0.5 line-clamp-2", selected === i ? "text-white/75" : "text-slate-500")}>
-              {opt.description}
-            </p>
-          </button>
-        ))}
-      </div>
-
-      {/* General tips */}
       {generalTips && generalTips.length > 0 && (
         <div className="bg-gradient-to-r from-primary-50 to-ocean-50 rounded-2xl p-4 border border-primary-100">
           <h3 className="font-bold text-slate-800 mb-3 flex items-center gap-2">
@@ -230,10 +196,8 @@ export function ItineraryDisplay({ itineraries, generalTips }: ItineraryDisplayP
           </ul>
         </div>
       )}
-
-      {/* Active itinerary days */}
       <div className="space-y-3">
-        {active.days?.map((day, i) => (
+        {itinerary.map((day, i) => (
           <DayCard key={day.day} day={day} defaultOpen={i === 0} />
         ))}
       </div>
