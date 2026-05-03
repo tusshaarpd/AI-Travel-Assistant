@@ -14,6 +14,15 @@ export function formatCurrency(amount: number, currency = "USD"): string {
   }).format(amount);
 }
 
+export function getCurrencySymbol(currency = "USD"): string {
+  const symbols: Record<string, string> = {
+    USD: "$", INR: "₹", EUR: "€", GBP: "£",
+    JPY: "¥", AUD: "A$", CAD: "C$", SGD: "S$",
+    AED: "AED ", THB: "฿", MYR: "RM ", HKD: "HK$",
+  };
+  return symbols[currency.toUpperCase()] ?? currency + " ";
+}
+
 export function formatDate(dateStr: string): string {
   const date = new Date(dateStr);
   return date.toLocaleDateString("en-US", {

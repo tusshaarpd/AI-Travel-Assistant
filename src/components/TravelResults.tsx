@@ -7,7 +7,7 @@ import { FlightCards } from "./FlightCards";
 import { HotelCards } from "./HotelCards";
 import { ItineraryDisplay } from "./ItineraryDisplay";
 import { CostBreakdownCard } from "./CostBreakdown";
-import { formatDate, calculateNights, cn } from "@/lib/utils";
+import { formatDate, calculateNights, formatCurrency, cn } from "@/lib/utils";
 
 type Tab = "overview" | "flights" | "hotels" | "itinerary" | "costs";
 
@@ -26,6 +26,7 @@ interface TravelResultsProps {
 
 export function TravelResults({ plan, onReset }: TravelResultsProps) {
   const [activeTab, setActiveTab] = useState<Tab>("overview");
+  const currency = plan.travelInfo.currency || plan.costBreakdown?.currency || "USD";
   const nights = plan.travelInfo.returnDate
     ? calculateNights(plan.travelInfo.departureDate!, plan.travelInfo.returnDate)
     : plan.itinerary?.length ?? 0;
@@ -104,7 +105,7 @@ export function TravelResults({ plan, onReset }: TravelResultsProps) {
                 sub="from"
                 subValue={
                   plan.outboundFlights[0]
-                    ? `$${plan.outboundFlights[0].price}`
+                    ? formatCurrency(plan.outboundFlights[0].price, plan.outboundFlights[0].currency || currency)
                     : "N/A"
                 }
               />
@@ -115,7 +116,7 @@ export function TravelResults({ plan, onReset }: TravelResultsProps) {
                 sub="from"
                 subValue={
                   plan.hotels[0]
-                    ? `$${plan.hotels[0].pricePerNight}/night`
+                    ? `${formatCurrency(plan.hotels[0].pricePerNight, plan.hotels[0].currency || currency)}/night`
                     : "N/A"
                 }
               />
@@ -155,7 +156,7 @@ export function TravelResults({ plan, onReset }: TravelResultsProps) {
                   <div>
                     <p className="text-sm text-slate-600">Total Estimated Cost</p>
                     <p className="text-3xl font-bold text-slate-900 mt-1">
-                      ${plan.costBreakdown.total?.toLocaleString()}
+                      {formatCurrency(plan.costBreakdown.total ?? 0, currency)}
                     </p>
                     <p
                       className={cn(
@@ -164,8 +165,8 @@ export function TravelResults({ plan, onReset }: TravelResultsProps) {
                       )}
                     >
                       {plan.costBreakdown.withinBudget
-                        ? `✓ Within budget — $${plan.costBreakdown.budgetDifference} to spare`
-                        : `⚠ ${Math.abs(plan.costBreakdown.budgetDifference)} over budget`}
+                        ? `✓ Within budget — ${formatCurrency(plan.costBreakdown.budgetDifference, currency)} to spare`
+                        : `⚠ ${formatCurrency(Math.abs(plan.costBreakdown.budgetDifference), currency)} over budget`}
                     </p>
                   </div>
                   <DollarSign className="w-12 h-12 text-ocean-200" />
@@ -216,6 +217,7 @@ export function TravelResults({ plan, onReset }: TravelResultsProps) {
             <ItineraryDisplay
               itinerary={plan.itinerary ?? []}
               generalTips={plan.generalTips}
+              currency={currency}
             />
           </div>
         )}
