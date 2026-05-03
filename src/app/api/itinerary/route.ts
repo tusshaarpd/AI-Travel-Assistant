@@ -95,7 +95,12 @@ export async function POST(request: NextRequest) {
     try {
       itineraryData = JSON.parse(itineraryResult.value);
     } catch {
-      console.error("Failed to parse itinerary JSON");
+      const preview = itineraryResult.value?.slice(0, 300);
+      console.error("Failed to parse itinerary JSON. Raw response preview:", preview);
+      return NextResponse.json(
+        { error: "Itinerary generation produced invalid JSON. Please try again." },
+        { status: 502 }
+      );
     }
 
     // Use real API data where available, fall back to empty arrays

@@ -109,7 +109,7 @@ Rules: 1 activity per time slot. Real place/restaurant names. Compact JSON.`;
       { role: "user", content: prompt },
     ],
     temperature: 0.8,
-    max_tokens: 2000,
+    max_tokens: 6000,
     response_format: { type: "json_object" },
   });
 
