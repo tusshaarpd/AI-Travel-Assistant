@@ -119,8 +119,12 @@ export function ChatInterface() {
         return;
       }
 
-      setTravelPlan(data as TravelPlan);
+      const plan = data as TravelPlan;
+      setTravelPlan(plan);
       setStage("results");
+      if (plan.warnings?.length) {
+        addMessage("assistant", `Your itinerary is ready! Note: ${plan.warnings.join(" | ")}`);
+      }
     } catch (error) {
       console.error("Plan generation error:", error);
       addMessage(

@@ -147,6 +147,7 @@ export interface TravelPlan {
   bestTimeToVisit?: string;
   weatherInfo?: string;
   visaInfo?: string;
+  warnings?: string[];
   emergencyContacts?: {
     police: string;
     ambulance: string;
